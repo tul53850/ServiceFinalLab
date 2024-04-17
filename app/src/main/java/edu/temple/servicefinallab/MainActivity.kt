@@ -24,19 +24,10 @@ class MainActivity : AppCompatActivity() {
         buttonStartService = findViewById(R.id.buttonStartService)
 
         buttonStartService.setOnClickListener {
-            val input = editText.text.toString().toIntOrNull()
-            if (input != null) {
-                startCountdownService(input)
-            } else {
-                // Handle invalid input
-            }
+            val intent = Intent(this, CountdownService::class.java)
+            intent.putExtra("countdown", editText.text.toString().toInt())
+            startService(intent)
         }
-    }
-
-    private fun startCountdownService(value: Int) {
-        val intent = Intent(this, CountdownService::class.java)
-        intent.putExtra("countdown_value", value)
-        startService(intent)
     }
 }
 
@@ -44,30 +35,23 @@ class MainActivity : AppCompatActivity() {
 
 class CountdownService : Service() {
 
-    private var job: Job? = null
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val value = intent?.getIntExtra("countdown_value", 0) ?: 0
-        startCountdown(value)
-        return START_NOT_STICKY
+        intent?.run{
+            val from = getIntExtra("countdown", 10)
+            CoroutineScope(Dispatchers.IO).launch{
+                repeat(from){
+                    Log.d("countdown", (10-it).toString())
+                    delay(1000)
+                }
+            }
+        }
+
+        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        job?.cancel()
-    }
-
-    private fun startCountdown(value: Int) {
-        job = CoroutineScope(Dispatchers.Default).launch {
-            for (i in value downTo 0) {
-                Log.d("CountdownService", "Countdown: $i")
-                delay(1000) // Delay for 1 second
-            }
-            stopSelf() // Stop the service when countdown finishes
-        }
+        TODO("Not yet implemented")
     }
 }
